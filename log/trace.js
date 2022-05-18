@@ -2,29 +2,45 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 
-export function pin(){
-	return path.dirname(getCallerFile(3))
+export function trace(){
+	let stack = getStack()
+	let file = stack[3]
+	let name = path.basename(file)
+		.replace(/\.js$/, '')
+
+	return { file, name, stack }
 }
 
-export function based(base){
-	return base === path.dirname(getCallerFile(4))
+export function diff(base, trace){
+	if(path.dirname(base.file) === path.dirname(trace.file))
+		return { root: true, name: trace.name }
+
+	let relative = path.relative(
+		path.dirname(base.file),
+		trace.file
+	)
+
+	let name = relative
+		.replace(/\.js$/, '')
+
+	return { name }
 }
 
-export function locate(base){
-	let relative = path.relative(base, getCallerFile(4))
 
-	return relative.replace(/\.js$/, '')
-}
-
-
-function getCallerFile(offset){
+function getStack(){
 	let originalFunc = Error.prepareStackTrace
 	let error = new Error()
 	let file
 
 	Error.prepareStackTrace = (error, stack) => stack
-	file = fileURLToPath(error.stack[offset].getFileName())
+
+	let stack = error.stack
+		.map(entry => entry.getFileName())
+		.filter(Boolean)
+		.filter(file => file.startsWith('file:'))
+		.map(file => fileURLToPath(file))
+
     Error.prepareStackTrace = originalFunc
 
-    return file
+    return stack
 }

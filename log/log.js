@@ -1,14 +1,7 @@
 import { humanDuration } from './time.js'
-import { pin, locate, based } from './trace.js'
+import { trace, diff } from './trace.js'
+import { std } from './output.js'
 
-
-const logColors = {
-	red: '31m',
-	green: '32m',
-	yellow: '33m',
-	blue: '34m',
-	cyan: '36m',
-}
 
 const levelCascades = {
 	D: ['debug'],
@@ -19,59 +12,71 @@ const levelCascades = {
 
 
 export function create(config){
-	let name
-	let color
-	let severity
 	let accumulation
-	let pinnedTrace
+	let traceBase
 	let timings = {}
-	let pipe = {
-		std: console.log,
-		err: console.error
+	let pipe
+	let output = std
+
+
+	function applyConfig(newConfig){
+		config = {
+			name: newConfig.name,
+			color: newConfig.color || 'yellow',
+			severity: newConfig.severity || 'debug'
+		}
 	}
 
-	function applyConfig(config){
-		name = config.name
-		color = config.color
-		severity = config.severity || 'debug'
-	}
 
-	function log(level, ...args){
+	function write({ level, args, trace }){
+		let name = config.name
+		let color = config.color
+		let severity = config.severity
+
 		if(!levelCascades[level].includes(severity))
 			return
 
-		let output = level === 'E'
-			? pipe.err
-			: pipe.std
+		if(pipe){
+			pipe({ level, args, trace })
+			return
+		}
 
-		let activeColor = level === 'E'
-			? 'red'
-			: color || (
-				based(pinnedTrace)
-					? 'yellow'
-					: 'cyan'
-			)
-		
-		let formattedDate = new Date()
-			.toISOString()
-			.slice(0,19)
-			.replace('T', ' ')
+		if(!name){
+			if(traceBase){
+				let { name: diffName, root } = diff(traceBase, trace)
 
-		let formattedName = name
-			? name
-			: locate(pinnedTrace)
+				name = diffName
+				
+				if(!root)
+					color = 'cyan'
+			}else{
+				name = trace.name
+			}
+		}
 
-		let contents = args.map(arg => {
-			if(typeof arg === 'number')
-				return arg.toLocaleString('en-US')
-		
-			if(arg && arg.stack)
-				return arg.stack
-		
-			return arg
+		output({
+			level,
+			name,
+
+			date: new Date()
+				.toISOString()
+				.slice(0,19)
+				.replace('T', ' '),
+
+			color: level === 'E'
+				? 'red'
+				: color,
+
+			contents: args.map(arg => {
+				if(typeof arg === 'number')
+					return arg.toLocaleString('en-US')
+			
+				if(arg && arg.stack)
+					return arg.stack
+			
+				return arg
+			})
 		})
-
-		output(`${formattedDate} ${level} [\x1b[${logColors[activeColor]}${formattedName}\x1b[0m]`, ...contents)
 	}
 
 	function time(level, key, ...contents){
@@ -98,28 +103,35 @@ export function create(config){
 		}
 	}
 
-	function accumulate(level, { line, timeout = 10000, ...values }){
+	function accumulate({ level, trace, data: {line, timeout = 10000, ...values} }){
 		if(!accumulation){
 			accumulation = {
 				start: Date.now(),
 				timeout,
-				data: {}
+				data: {},
+				flush: () => {
+					let data = { ...accumulation.data, time: humanDuration(timeout) }
+
+					clearTimeout(accumulation.timer)
+	
+					write({
+						level,
+						trace,
+						args: accumulation.line.map(piece => {
+							for(let [k, v] of Object.entries(data)){
+								if(typeof(piece) === 'string')
+									piece = piece.replace(`%${k}`, v.toLocaleString('en-US'))
+							}
+		
+							return piece
+						})
+					})
+	
+					accumulation = undefined
+				}
 			}
 
-			setTimeout(() => {
-				let data = { ...accumulation.data, time: humanDuration(timeout) }
-
-				log(level, ...accumulation.line.map(piece => {
-					for(let [k, v] of Object.entries(data)){
-						if(typeof(piece) === 'string')
-							piece = piece.replace(`%${k}`, v.toLocaleString('en-US'))
-					}
-
-					return piece
-				}))
-
-				accumulation = undefined
-			}, timeout)
+			accumulation.timer = setTimeout(accumulation.flush, timeout)
 		}
 		
 		for(let [k, v] of Object.entries(values)){
@@ -133,35 +145,33 @@ export function create(config){
 
 	return {
 		config(newConfig){
-			pinnedTrace = pin()
+			traceBase = trace()
 			applyConfig(newConfig)
 		},
 		fork(branchConfig){
 			return create({
-				color,
-				severity,
+				...config,
 				...branchConfig,
 			})
 		},
 		branch(branchConfig){
 			return create({
-				color,
-				severity,
+				...config,
 				...branchConfig,
 				name: `${name}/${branchConfig.name}`
 			})
 		},
-		debug(...contents){
-			log('D', ...contents)
+		debug(...args){
+			write({ level: 'D', args, trace: trace() })
 		},
-		info(...contents){
-			log('I', ...contents)
+		info(...args){
+			write({ level: 'I', args, trace: trace() })
 		},
-		warn(...contents){
-			log('W', ...contents)
+		warn(...args){
+			write({ level: 'W', args, trace: trace() })
 		},
-		error(...contents){
-			log('E', ...contents)
+		error(...args){
+			write({ level: 'E', args, trace: trace() })
 		},
 		time: {
 			debug(...contents){
@@ -178,23 +188,28 @@ export function create(config){
 			}
 		},
 		accumulate: {
-			debug(...contents){
-				accumulate('I', ...contents)
+			debug(data){
+				accumulate({ level: 'D', data, trace: trace() })
 			},
-			info(...contents){
-				accumulate('I', ...contents)
+			info(data){
+				accumulate({ level: 'I', data, trace: trace() })
 			},
-			warn(...contents){
-				accumulate('I', ...contents)
+			warn(data){
+				accumulate({ level: 'W', data, trace: trace() })
 			},
-			error(...contents){
-				accumulate('I', ...contents)
+			error(data){
+				accumulate({ level: 'E', data, trace: trace() })
 			}
 		},
-		forward: pipe,
+		flush(){
+			if(accumulation)
+				accumulation.flush()
+		},
+		write(line){
+			write(line)
+		},
 		pipe(logger){
-			pipe.std = logger.forward.std
-			pipe.err = logger.forward.err
+			pipe = logger.write
 		}
 	}
 }
