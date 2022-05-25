@@ -110,7 +110,10 @@ export function create(config){
 				timeout,
 				data: {},
 				flush: () => {
-					let data = { ...accumulation.data, time: humanDuration(timeout) }
+					let data = { 
+						...accumulation.data, 
+						time: humanDuration(Date.now() - accumulation.start) 
+					}
 
 					clearTimeout(accumulation.timer)
 	
