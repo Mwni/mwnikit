@@ -142,6 +142,9 @@ export function create(config){
 		}
 		
 		accumulation.line = line
+
+		if(Date.now() - accumulation.start >= timeout)
+			accumulation.flush()
 	}
 
 	applyConfig(config)
