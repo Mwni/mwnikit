@@ -12,9 +12,9 @@ const levelCascades = {
 
 
 export function create(config){
-	let accumulation
-	let traceBase
+	let accumulations = {}
 	let timings = {}
+	let traceBase
 	let pipe
 	let output = std
 
@@ -103,9 +103,15 @@ export function create(config){
 		}
 	}
 
-	function accumulate({ level, trace, data: {line, timeout = 10000, ...values} }){
+	function accumulate({ level, trace, args: {id, text, data = {}, timeout = 10000} }){
+		if(!id){
+			id = Object.keys(data).join('+')
+		}
+
+		let accumulation = accumulations[id]
+
 		if(!accumulation){
-			accumulation = {
+			accumulations[id] = accumulation = {
 				start: Date.now(),
 				timeout,
 				data: {},
@@ -120,7 +126,7 @@ export function create(config){
 					write({
 						level,
 						trace,
-						args: accumulation.line.map(piece => {
+						args: accumulation.text.map(piece => {
 							for(let [k, v] of Object.entries(data)){
 								if(typeof(piece) === 'string')
 									piece = piece.replace(`%${k}`, v.toLocaleString('en-US'))
@@ -130,18 +136,18 @@ export function create(config){
 						})
 					})
 	
-					accumulation = undefined
+					delete accumulations[id]
 				}
 			}
 
 			accumulation.timer = setTimeout(accumulation.flush, timeout)
 		}
 		
-		for(let [k, v] of Object.entries(values)){
+		for(let [k, v] of Object.entries(data)){
 			accumulation.data[k] = (accumulation.data[k] || 0) + v
 		}
 		
-		accumulation.line = line
+		accumulation.text = text
 
 		if(Date.now() - accumulation.start >= timeout)
 			accumulation.flush()
@@ -194,22 +200,23 @@ export function create(config){
 			}
 		},
 		accumulate: {
-			debug(data){
-				accumulate({ level: 'D', data, trace: trace() })
+			debug(args){
+				accumulate({ level: 'D', args, trace: trace() })
 			},
-			info(data){
-				accumulate({ level: 'I', data, trace: trace() })
+			info(args){
+				accumulate({ level: 'I', args, trace: trace() })
 			},
-			warn(data){
-				accumulate({ level: 'W', data, trace: trace() })
+			warn(args){
+				accumulate({ level: 'W', args, trace: trace() })
 			},
-			error(data){
-				accumulate({ level: 'E', data, trace: trace() })
+			error(args){
+				accumulate({ level: 'E', args, trace: trace() })
 			}
 		},
 		flush(){
-			if(accumulation)
+			for(let accumulation of Object.values(accumulations)){
 				accumulation.flush()
+			}
 		},
 		write(line){
 			write(line)
