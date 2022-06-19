@@ -79,27 +79,28 @@ export function create(config){
 		})
 	}
 
-	function time(level, key, ...contents){
+	function time({ level, trace, key, contents }){
 		if(timings[key]){
 			let time = process.hrtime(timings[key])
 			let timeInMs = (time[0] * 1000000000 + time[1]) / 1000000
 			let duration = humanDuration(timeInMs, 1)
 
-			log(
+			write({
 				level, 
-				...contents.map(
+				trace,
+				args: contents.map(
 					arg => typeof arg === 'string'
 						? arg.replace('%', duration)
 						: arg
 				)
-			)
+			})
 
 			delete timings[key]
 		}else{
 			timings[key] = process.hrtime()
 
 			if(contents.length > 0)
-				log(level, ...contents)
+				write({ level, trace, args: contents })
 		}
 	}
 
@@ -186,17 +187,17 @@ export function create(config){
 			write({ level: 'E', args, trace: trace() })
 		},
 		time: {
-			debug(...contents){
-				time('I', ...contents)
+			debug(key, ...contents){
+				time({ level: 'D', key, contents, trace: trace() })
 			},
-			info(...contents){
-				time('I', ...contents)
+			info(key, ...contents){
+				time({ level: 'I', key, contents, trace: trace() })
 			},
-			warn(...contents){
-				time('I', ...contents)
+			warn(key, ...contents){
+				time({ level: 'W', key, contents, trace: trace() })
 			},
-			error(...contents){
-				time('I', ...contents)
+			error(key, ...contents){
+				time({ level: 'E', key, contents, trace: trace() })
 			}
 		},
 		accumulate: {
