@@ -29,7 +29,6 @@ export default class ProtocolBuffer{
 					field.fields = structs.find(s=>s.id===f.subtype).fields
 				break
 				case 'json':
-
 				break
 				default:
 					field.bytes = ProtocolBuffer.typedef[f.type].bytes
@@ -40,7 +39,7 @@ export default class ProtocolBuffer{
 		}
 
 
-		let structs = config.structs.map(struct=>Object.assign(struct,{
+		let structs = (config.structs || []).map(struct=>Object.assign(struct,{
 			fields: struct.fields.map(f=>parseField(f))
 		}))
 
@@ -125,6 +124,11 @@ export default class ProtocolBuffer{
 					this.writeEncodedPrimitive('uint16',offset+len,strlen)
 					len += strlen+2
 				break
+				case 'blob':
+					let bloblen = this.writeBlob(offset+len+4,value)
+					this.writeEncodedPrimitive('uint32',offset+len,bloblen)
+					len += bloblen+4
+				break
 				default:
 					this.writeEncodedPrimitive(field.type,offset+len,value)
 					len += field.bytes
@@ -197,6 +201,11 @@ export default class ProtocolBuffer{
 		return len
 	}
 
+	writeBlob(offset, blob){
+		this.encode_buffer.set(blob, offset)
+		return blob.length
+	}
+
 
 	decode(buffer){
 		if(buffer.length > this.config.buffers.decoder.bytes)
@@ -263,6 +272,11 @@ export default class ProtocolBuffer{
 
 					if(field.type==='json')
 						value = JSON.parse(value)
+				break
+				case 'blob':
+					let bloblen = this.readEncodedPrimitive('uint32',offset+pos)
+					value = this.readBlob(offset+pos+4,bloblen)
+					pos += bloblen+4
 				break
 				default:
 					value = this.readEncodedPrimitive(field.type,offset+pos)
@@ -336,6 +350,10 @@ export default class ProtocolBuffer{
 
 		return str
 	}
+
+	readBlob(offset,len){
+		return this.decode_buffer.slice(offset, offset+len)
+	}
 }
 
 ProtocolBuffer.typedef = {
@@ -347,5 +365,6 @@ ProtocolBuffer.typedef = {
 	int32: {bytes:4},
 	bool: {bytes:1},
 	float: {bytes:4},
-	string: {bytes:undefined}
+	blob: {bytes:undefined},
+	string: {bytes:undefined},
 }
