@@ -151,7 +151,7 @@ export default class ProtocolBuffer{
 				this.encoder.setUint32(offset,value)
 			break
 			case 'uint64':
-				this.encoder.setBigUint64(offset,value)
+				this.encoder.setBigUint64(offset, BigInt(value))
 			break
 			case 'int8':
 				this.encoder.setInt8(offset,value)
@@ -163,7 +163,7 @@ export default class ProtocolBuffer{
 				this.encoder.setInt32(offset,value)
 			break
 			case 'int64':
-				this.encoder.setBigInt64(offset,value)
+				this.encoder.setBigInt64(offset, BigInt(value))
 			break
 			case 'float32':
 				this.encoder.setFloat32(offset,value)
