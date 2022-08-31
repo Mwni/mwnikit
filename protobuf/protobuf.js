@@ -150,6 +150,9 @@ export default class ProtocolBuffer{
 			case 'uint32':
 				this.encoder.setUint32(offset,value)
 			break
+			case 'uint64':
+				this.encoder.setBigUint64(offset,value)
+			break
 			case 'int8':
 				this.encoder.setInt8(offset,value)
 			break
@@ -159,8 +162,14 @@ export default class ProtocolBuffer{
 			case 'int32':
 				this.encoder.setInt32(offset,value)
 			break
-			case 'float':
+			case 'int64':
+				this.encoder.setBigInt64(offset,value)
+			break
+			case 'float32':
 				this.encoder.setFloat32(offset,value)
+			break
+			case 'float64':
+				this.encoder.setFloat64(offset,value)
 			break
 			case 'bool':
 				this.encoder.setUint8(offset,+value)
@@ -294,28 +303,26 @@ export default class ProtocolBuffer{
 		switch(type){
 			case 'uint8':
 				return this.decoder.getUint8(offset)
-			break
 			case 'uint16':
 				return this.decoder.getUint16(offset)
-			break
 			case 'uint32':
 				return this.decoder.getUint32(offset)
-			break
+			case 'uint64':
+				return this.decoder.getBigUint64(offset)
 			case 'int8':
 				return this.decoder.getInt8(offset)
-			break
 			case 'int16':
 				return this.decoder.getInt16(offset)
-			break
 			case 'int32':
 				return this.decoder.getInt32(offset)
-			break
-			case 'float':
+			case 'int64':
+				return this.decoder.getBigInt64(offset)
+			case 'float32':
 				return this.decoder.getFloat32(offset)
-			break
+			case 'float64':
+				return this.decoder.getFloat64(offset)
 			case 'bool':
 				return !!this.decoder.getUint8(offset)
-			break
 		}
 	}
 
@@ -360,11 +367,14 @@ ProtocolBuffer.typedef = {
 	uint8: {bytes:1},
 	uint16: {bytes:2},
 	uint32: {bytes:4},
+	uint64: {bytes:8},
 	int8: {bytes:1},
 	int16: {bytes:2},
 	int32: {bytes:4},
+	int64: {bytes:8},
 	bool: {bytes:1},
-	float: {bytes:4},
+	float32: {bytes:4},
+	float64: {bytes:8},
 	blob: {bytes:undefined},
 	string: {bytes:undefined},
 }
