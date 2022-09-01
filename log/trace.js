@@ -5,6 +5,14 @@ import { fileURLToPath } from 'url'
 export function trace(){
 	let stack = getStack()
 	let file = stack[3]
+
+	if(!file)
+		return {
+			file: '?',
+			name: '?',
+			stack: []
+		}
+
 	let name = path.basename(file)
 		.replace(/\.js$/, '')
 
