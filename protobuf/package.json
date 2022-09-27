@@ -1,6 +1,9 @@
 {
     "name": "@mwni/protobuf",
     "type": "module",
-    "version": "1.1.2",
-    "main": "protobuf.js"
+    "version": "2.0.0",
+    "main": "protobuf.js",
+    "dependencies": {
+        "@structdb/serializer": "^1.1.5-alpha"
+    }
 }
