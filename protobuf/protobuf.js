@@ -6,15 +6,9 @@ export default function createProtobuf({ messages, bufferSize }){
 	let types = []
 	let serializers = {}
 
-	for(let [type, properties] of Object.entries(messages)){
+	for(let [type, schema] of Object.entries(messages)){
+		serializers[type] = createSerializer({ buffer, schema })
 		types.push(type)
-		serializers[type] = createSerializer({
-			buffer,
-			schema: {
-				type: 'object',
-				properties
-			}
-		})
 	}
 
 	types.sort()
