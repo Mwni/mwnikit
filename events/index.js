@@ -1,1 +1,1 @@
-export { default as EventEmitter } from './emitter.js'
+export { default as createEmitter } from './emitter.js'
