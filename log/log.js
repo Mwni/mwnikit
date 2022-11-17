@@ -171,7 +171,7 @@ export function create(config){
 			return create({
 				...config,
 				...branchConfig,
-				name: `${name}/${branchConfig.name}`
+				name: `${config.name}/${branchConfig.name}`
 			})
 		},
 		debug(...args){
