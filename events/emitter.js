@@ -26,15 +26,15 @@ export default function createEmitter(){
 		},
 	
 		emit(type, data){
-			let listeners = listeners.filter(
+			let matchedListeners = listeners.filter(
 				listener => listener.type === type
 			)
 	
 			listeners = listeners.filter(
-				listener => !listener.once || !listeners.includes(listener)
+				listener => !(listener.once && matchedListeners.includes(listener))
 			)
 	
-			for(let { callback } of listeners){
+			for(let { callback } of matchedListeners){
 				callback(data)
 			}
 
