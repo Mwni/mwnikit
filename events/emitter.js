@@ -1,37 +1,59 @@
 export default function createEmitter(){
-	let listeners = []
+	let listeners = {}
+
+	function add(type, entry){
+		if(!listeners[type])
+				listeners[type] = []
+
+		listeners[type].push(entry)
+	}
 
 	return {
+		listeners,
+
 		on(type, callback){
-			listeners.push({type, callback})
-			
+			add(type, { callback })
 			return this
 		},
 	
 		once(type, callback){
-			listeners.push({type, callback, once: true})
-
+			add(type, { callback, once: true })
 			return this
 		},
 	
 		off(type, callback){
-			listeners = listeners.filter(
-				listener => !(
-					listener.type === type 
-					&& (!callback || callback === listener.callback)
+			if(!type){
+				for(let key of Object.keys(listeners)){
+					delete listeners[key]
+				}
+				return
+			}
+
+			if(!listeners[type])
+				return
+
+			if(callback){
+				listeners[type] = listeners[type].filter(
+					listener => callback !== listener.callback
 				)
-			)
+	
+				if(listeners[type].length === 0)
+					delete listeners[type]
+			}else{
+				delete listeners[type]
+			}
 
 			return this
 		},
 	
 		emit(type, data){
-			let matchedListeners = listeners.filter(
-				listener => listener.type === type
-			)
+			if(!listeners[type])
+				return
+
+			let matchedListeners = listeners[type].slice()
 	
-			listeners = listeners.filter(
-				listener => !(listener.once && matchedListeners.includes(listener))
+			listeners[type] = listeners[type].filter(
+				listener => !listener.once
 			)
 	
 			for(let { callback } of matchedListeners){
