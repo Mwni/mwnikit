@@ -1,0 +1,9 @@
+{
+    "name": "@mwni/toml",
+    "type": "module",
+    "version": "1.0.0",
+    "main": "toml.js",
+    "dependencies": {
+        "toml": "^3.0.0"
+    }
+}
