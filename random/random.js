@@ -5,7 +5,7 @@ export function generateRandomToken({
 	segments = 1, 
 	charactersPerSegment = 6, 
 	alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789' 
-}){
+} = {}){
 	return Array(segments)
 		.fill(0)
 		.map(() => {
