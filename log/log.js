@@ -158,7 +158,7 @@ export function create(config){
 
 	return {
 		config(newConfig){
-			traceBase = trace()
+			traceBase = newConfig.dir || trace().dir
 			applyConfig(newConfig)
 		},
 		fork(branchConfig){

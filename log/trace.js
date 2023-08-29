@@ -16,15 +16,20 @@ export function trace(){
 	let name = path.basename(file)
 		.replace(/\.js$/, '')
 
-	return { file, name, stack }
+	return { 
+		dir: path.dirname(file),
+		file, 
+		name, 
+		stack 
+	}
 }
 
 export function diff(base, trace){
-	if(path.dirname(base.file) === path.dirname(trace.file))
+	if(base === path.dirname(trace.file))
 		return { root: true, name: trace.name }
 
 	let relative = path.relative(
-		path.dirname(base.file),
+		base,
 		trace.file
 	)
 
