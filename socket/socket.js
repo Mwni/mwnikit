@@ -85,6 +85,8 @@ export default function ({ url, autoReconnect = true, autoRetryRequests = false,
 				lastRequest.emit(event, payload)
 			else
 				lastRequest.reject(payload)
+		}else{
+			events.emit(event, payload)
 		}
 	}
 
