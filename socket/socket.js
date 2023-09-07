@@ -5,6 +5,8 @@ export default function ({ url, autoReconnect = true, autoRetryRequests = false,
 	let socket
 	let requestCounter = 0
 	let requestRegistry = []
+	let responseBacklog = []
+	let frozen = false
 	let connected = false
 	let connectionError
 	let events = new createEmitter()
@@ -53,6 +55,11 @@ export default function ({ url, autoReconnect = true, autoRetryRequests = false,
 	}
 
 	function handleMessage(evt){
+		if(frozen){
+			responseBacklog.push(evt)
+			return
+		}
+
 		let { event, ...payload } = JSON.parse(evt.data)
 
 		if(payload.id){
@@ -91,7 +98,7 @@ export default function ({ url, autoReconnect = true, autoRetryRequests = false,
 	}
 
 	function pushRequests(){
-		if(!connected)
+		if(!connected || frozen)
 			return
 
 		for(let request of requestRegistry){
@@ -145,6 +152,18 @@ export default function ({ url, autoReconnect = true, autoRetryRequests = false,
 					}),
 					request
 				)
+			},
+			freeze(){
+				frozen = true
+			},
+			unfreeze(){
+				frozen = false
+
+				while(responseBacklog.length > 0){
+					handleMessage(responseBacklog.shift())
+				}
+
+				pushRequests()
 			}
 		}
 	)
