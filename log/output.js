@@ -9,9 +9,13 @@ const colors = {
 }
 
 export function std({ level, date, name, color, contents }){
+	let prefix = ''
 	let func = level === 'E'
 		? console.error
 		: console.log
 
-	func(`${date} ${level} [\x1b[${colors[color]}${name}\x1b[0m]`, ...contents)
+	if(process.versions.bun)
+		prefix = '\x1b[0m'
+
+	func(`${prefix}${date} ${level} [\x1b[${colors[color]}${name}\x1b[0m]`, ...contents)
 }

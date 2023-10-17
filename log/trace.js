@@ -3,7 +3,7 @@ import { fileURLToPath } from 'url'
 
 
 export function trace(){
-	let stack = getStack()
+	let stack = process.versions.bun ? getBunStack() : getNodeStack()
 	let file = stack[3]
 
 	if(!file)
@@ -40,20 +40,38 @@ export function diff(base, trace){
 }
 
 
-function getStack(){
-	let originalFunc = Error.prepareStackTrace
-	let error = new Error()
-	let file
+function getNodeStack(){
+	let orgPrepareStackTrace = Error.prepareStackTrace
+	let holster = {}
 
-	Error.prepareStackTrace = (error, stack) => stack
+	Error.prepareStackTrace = (_, stack) => stack
+	Error.captureStackTrace(holster)
 
-	let stack = error.stack
+	let stack = holster.stack
+		.filter(entry => !entry.isNative() && !entry.isEval())
 		.map(entry => entry.getFileName())
 		.filter(Boolean)
 		.filter(file => file.startsWith('file:'))
 		.map(file => fileURLToPath(file))
 
-    Error.prepareStackTrace = originalFunc
+	Error.prepareStackTrace = orgPrepareStackTrace
 
-    return stack
+	return stack
+}
+
+function getBunStack(){
+	let orgPrepareStackTrace = Error.prepareStackTrace
+	let holster = {}
+
+	Error.prepareStackTrace = (_, stack) => stack
+	Error.captureStackTrace(holster)
+
+	let stack = holster.stack
+		.filter(entry => !entry.isNative() && !entry.isEval())
+		.map(entry => entry.getFileName())
+		.filter(Boolean)
+
+	Error.prepareStackTrace = orgPrepareStackTrace
+
+	return stack
 }
