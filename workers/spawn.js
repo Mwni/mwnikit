@@ -1,12 +1,12 @@
 import fs from 'fs'
 import pu from 'path'
 import { fork } from 'child_process'
-import { getCallerFile, getChildEntryFile } from './utils.js'
+import { getCallerFile, getWorkerFile } from './utils.js'
 import { create as createProxy, derive as deriveProxy } from './proxy.js'
 
 
 export default async function(path, ...args){
-	let childEntryFile = getChildEntryFile()
+	let workerFile = getWorkerFile()
 	let callerFile = getCallerFile()
 	let callerDir = pu.dirname(callerFile)
 	let [file, func] = path.split(':')
@@ -18,7 +18,7 @@ export default async function(path, ...args){
 		
 		
 	let childProcess = fork(
-		childEntryFile, 
+		workerFile, 
 		[
 			'--file',
 			file,

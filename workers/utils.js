@@ -2,11 +2,11 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 
-export function getChildEntryFile(){
+export function getWorkerFile(){
 	let __filename = fileURLToPath(import.meta.url)
 	let __dirname = path.dirname(__filename)
 
-	return path.join(__dirname, './child.js')
+	return path.join(__dirname, './worker.js')
 }
 
 
