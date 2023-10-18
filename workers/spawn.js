@@ -27,12 +27,14 @@ export default async function(path, ...args){
 		]
 	)
 
-	let crashHandler = () => {
+	let exitHandler = () => {
 		childProcess.kill()
 	}
 
-	process.on('uncaughtException', crashHandler)
-	process.on('beforeExit', crashHandler)
+	process.on('SIGINT', exitHandler)
+	process.on('uncaughtException', exitHandler)
+	process.on('beforeExit', exitHandler)
+	process.on('exit', exitHandler)
 
 	await new Promise(resolve => {
 		childProcess.once(
@@ -61,7 +63,9 @@ export default async function(path, ...args){
 	}catch(error){
 		throw error
 	}finally{
-		process.off('uncaughtException', crashHandler)
-		process.off('beforeExit', crashHandler)
+		process.off('SIGINT', exitHandler)
+		process.off('uncaughtException', exitHandler)
+		process.off('beforeExit', exitHandler)
+		process.off('exit', exitHandler)
 	}
 }
