@@ -11,13 +11,21 @@ export function getWorkerFile(){
 
 
 export function getCallerFile(){
-	let originalFunc = Error.prepareStackTrace
-	let error = new Error()
-	let file
+	let originalPrepareStackTrace = Error.prepareStackTrace
+	let holster = {}
 
-	Error.prepareStackTrace = (error, stack) => stack
-	file = fileURLToPath(error.stack[2].getFileName())
-    Error.prepareStackTrace = originalFunc
+	Error.prepareStackTrace = (_, stack) => stack
+	Error.captureStackTrace(holster)
+
+	let file = holster.stack
+		.filter(entry => !entry.isNative() && !entry.isEval())
+		.map(entry => entry.getFileName())
+		.find(file => !file.includes('mwni/workers'))
+
+	if(file.startsWith('file:'))
+		file = fileURLToPath(file)
+
+    Error.prepareStackTrace = originalPrepareStackTrace
 
     return file
 }
