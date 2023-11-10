@@ -101,12 +101,16 @@ export default function ({ url, autoReconnect = true, autoRetryRequests = false,
 		if(!connected || frozen)
 			return
 
-		for(let request of requestRegistry){
+		for(let request of requestRegistry.slice()){
 			if(request.sent)
 				continue
 
 			socket.send(JSON.stringify(request.payload))
-			request.sent = true
+
+			if(request.id)
+				request.sent = true
+			else
+				requestRegistry.splice(requestRegistry.indexOf(request), 1)
 		}
 	}
 
@@ -152,6 +156,10 @@ export default function ({ url, autoReconnect = true, autoRetryRequests = false,
 					}),
 					request
 				)
+			},
+			send(payload){
+				requestRegistry.push({ payload })
+				pushRequests()
 			},
 			freeze(){
 				frozen = true
