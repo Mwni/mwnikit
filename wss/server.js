@@ -63,7 +63,8 @@ export default ({ server, authorize, heartbeatInterval = 5000 }) => {
 								payload
 							)
 						}else{
-							client.emit('noop', { command })
+							if(command)
+								client.emit('noop', { command })
 						}
 					})
 
