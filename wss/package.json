@@ -1,7 +1,7 @@
 {
 	"name": "@mwni/wss",
 	"type": "module",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"main": "server.js",
 	"dependencies": {
 		"@mwni/events": "^3.0.0",
