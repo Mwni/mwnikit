@@ -57,7 +57,7 @@ export default ({ server, authorize, heartbeatInterval = 5000 }) => {
 						let { command, event, ...payload } = JSON.parse(message)
 						let key = command || event
 
-						if(client.listeners[ev]){
+						if(client.listeners[key]){
 							client.emit(
 								key, 
 								payload
