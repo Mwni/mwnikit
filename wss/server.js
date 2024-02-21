@@ -32,6 +32,7 @@ export default ({ server, authorize, heartbeatInterval = 5000 }) => {
 					ip: sock.remoteAddress,
 					path,
 					query,
+					headers: request.headers
 				}
 
 				let data = await authorize(httpMeta)
