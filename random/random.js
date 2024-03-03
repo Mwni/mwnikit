@@ -20,3 +20,19 @@ export function generateRandomToken({
 		})
 		.join('-')
 }
+
+
+export function shuffle(arr){
+	let temp
+	let j
+	let i = arr.length
+
+	while(--i > 0){
+		j = Math.floor(Math.random() * (i+1))
+		temp = arr[j]
+		arr[j] = arr[i]
+		arr[i] = temp
+	}
+
+	return arr
+  }
