@@ -1,0 +1,6 @@
+{
+    "name": "@mwni/object",
+    "type": "module",
+    "version": "1.0.0",
+    "main": "object.js"
+}
