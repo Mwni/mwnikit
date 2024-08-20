@@ -39,6 +39,10 @@ export function diff(base, trace){
 	return { name }
 }
 
+export function pin(dir, trace){
+	return path.normalize(path.join(trace.dir, dir))
+}
+
 
 function getNodeStack(){
 	let orgPrepareStackTrace = Error.prepareStackTrace

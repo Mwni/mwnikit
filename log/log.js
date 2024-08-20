@@ -1,8 +1,9 @@
 import { humanDuration } from './time.js'
-import { trace, diff } from './trace.js'
+import { trace, diff, pin } from './trace.js'
 import { std } from './output.js'
 
 
+const defaultColor = 'yellow'
 const levelCascades = {
 	D: ['debug'],
 	I: ['debug', 'info'],
@@ -11,29 +12,29 @@ const levelCascades = {
 }
 
 
-export function create(config){
+export function create(config = {}){
+	let logger
 	let accumulations = {}
 	let timings = {}
-	let traceBase
 	let pipe
 	let output = std
 
-
-	function applyConfig(newConfig){
-		config = {
-			name: newConfig.name,
-			color: newConfig.color || 'yellow',
-			severity: newConfig.severity || 'debug'
-		}
+	function configure({ root, trace, ...other }){
+		Object.assign(config, {
+			...other,
+			root: root && trace
+				? pin(root, trace)
+				: undefined
+		})
 	}
-
 
 	function write({ level, args, trace }){
 		let name = config.name
 		let color = config.color
 		let severity = config.severity
+		let root = config.root
 
-		if(!levelCascades[level].includes(severity))
+		if(severity && !levelCascades[level].includes(severity))
 			return
 
 		if(pipe){
@@ -41,22 +42,27 @@ export function create(config){
 			return
 		}
 
-		if(!name){
-			if(traceBase){
-				let { name: diffName, root } = diff(traceBase, trace)
+		let path = []
 
-				name = diffName
-				
-				if(!root)
-					color = 'cyan'
-			}else{
-				name = trace.name
-			}
+		if(name)
+			path.push(name)
+
+		if(root){
+			let { name: diffName } = diff(root, trace)
+
+			path.push(diffName)
+			
+			if(!color)
+				color = 'cyan'
+		}else{
+			path.push(trace.name)
 		}
 
 		output({
 			level,
-			name,
+			name: path
+				.map(piece => piece.replace('\\', '/'))
+				.join('/'),
 
 			date: new Date()
 				.toISOString()
@@ -65,7 +71,7 @@ export function create(config){
 
 			color: level === 'E'
 				? 'red'
-				: color,
+				: color || defaultColor,
 
 			contents: args.map(arg => {
 				if(typeof arg === 'number')
@@ -154,12 +160,21 @@ export function create(config){
 			accumulation.flush()
 	}
 
-	applyConfig(config)
+	configure({
+		...config, 
+		trace: trace()
+	})
 
-	return {
-		config(newConfig){
-			traceBase = newConfig.dir || trace().dir
-			applyConfig(newConfig)
+	return logger = {
+		config({ name, color, severity, root }){
+			configure({ 
+				name,
+				color,
+				severity,
+				root,
+				trace: trace()
+			})
+			return logger
 		},
 		fork(branchConfig){
 			return create({
@@ -176,54 +191,69 @@ export function create(config){
 		},
 		debug(...args){
 			write({ level: 'D', args, trace: trace() })
+			return logger
 		},
 		info(...args){
 			write({ level: 'I', args, trace: trace() })
+			return logger
 		},
 		warn(...args){
 			write({ level: 'W', args, trace: trace() })
+			return logger
 		},
 		error(...args){
 			write({ level: 'E', args, trace: trace() })
+			return logger
 		},
 		time: {
 			debug(key, ...contents){
 				time({ level: 'D', key, contents, trace: trace() })
+				return logger
 			},
 			info(key, ...contents){
 				time({ level: 'I', key, contents, trace: trace() })
+				return logger
 			},
 			warn(key, ...contents){
 				time({ level: 'W', key, contents, trace: trace() })
+				return logger
 			},
 			error(key, ...contents){
 				time({ level: 'E', key, contents, trace: trace() })
+				return logger
 			}
 		},
 		accumulate: {
 			debug(args){
 				accumulate({ level: 'D', args, trace: trace() })
+				return logger
 			},
 			info(args){
 				accumulate({ level: 'I', args, trace: trace() })
+				return logger
 			},
 			warn(args){
 				accumulate({ level: 'W', args, trace: trace() })
+				return logger
 			},
 			error(args){
 				accumulate({ level: 'E', args, trace: trace() })
+				return logger
 			}
 		},
 		flush(){
 			for(let accumulation of Object.values(accumulations)){
 				accumulation.flush()
 			}
+			return logger
 		},
 		write(line){
 			write(line)
+			return logger
 		},
 		pipe(logger){
 			pipe = logger.write
+			return logger
 		}
 	}
 }

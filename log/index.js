@@ -1,3 +1,6 @@
 import { create } from './log.js'
 
-export default create({})
+export default {
+	...create(),
+	new: create
+}
