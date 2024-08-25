@@ -61,7 +61,7 @@ export function create(config = {}){
 		output({
 			level,
 			name: path
-				.map(piece => piece.replace('\\', '/'))
+				.map(piece => piece.replaceAll('\\', '/'))
 				.join('/'),
 
 			date: new Date()
