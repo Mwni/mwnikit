@@ -28,17 +28,19 @@ export function create(config = {}){
 		})
 	}
 
-	function write({ level, args, trace }){
+	function write({ level, args, trace, root }){
 		let name = config.name
 		let color = config.color
 		let severity = config.severity
-		let root = config.root
+		
+		if(!root)
+			root = config.root
 
 		if(severity && !levelCascades[level].includes(severity))
 			return
 
 		if(pipe){
-			pipe({ level, args, trace })
+			pipe({ level, args, trace, root })
 			return
 		}
 
