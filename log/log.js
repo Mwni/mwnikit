@@ -16,6 +16,7 @@ export function create(config = {}){
 	let logger
 	let accumulations = {}
 	let timings = {}
+	let entry
 	let pipe
 	let output = std
 
@@ -55,7 +56,9 @@ export function create(config = {}){
 			path.push(diffName)
 			
 			if(!color)
-				color = 'cyan'
+				color = !entry || trace.file === entry?.file 
+					? 'yellow' 
+					: 'cyan'
 		}else{
 			path.push(trace.name)
 		}
@@ -169,12 +172,13 @@ export function create(config = {}){
 
 	return logger = {
 		config({ name, color, level, root }){
+			entry = trace()
 			configure({ 
 				name,
 				color,
 				level,
 				root,
-				trace: trace()
+				trace: entry
 			})
 			return logger
 		},
