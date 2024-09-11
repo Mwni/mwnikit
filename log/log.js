@@ -31,7 +31,7 @@ export function create(config = {}){
 	function write({ level, args, trace, root }){
 		let name = config.name
 		let color = config.color
-		let severity = config.severity
+		let severity = config.level
 		
 		if(!root)
 			root = config.root
@@ -168,11 +168,11 @@ export function create(config = {}){
 	})
 
 	return logger = {
-		config({ name, color, severity, root }){
+		config({ name, color, level, root }){
 			configure({ 
 				name,
 				color,
-				severity,
+				level,
 				root,
 				trace: trace()
 			})
