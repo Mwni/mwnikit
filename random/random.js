@@ -1,11 +1,4 @@
-import { randomBytes } from 'crypto'
-
-
-export function generateRandomToken({ 
-	segments = 1, 
-	charactersPerSegment = 6, 
-	alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789' 
-} = {}){
+export function generateRandomToken({ segments, charactersPerSegment, alphabet, randomBytes }){
 	return Array(segments)
 		.fill(0)
 		.map(() => {
