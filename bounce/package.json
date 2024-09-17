@@ -1,5 +1,5 @@
 {
-    "name": "@mwni/debounce",
+    "name": "@mwni/bounce",
     "type": "module",
     "version": "1.0.0",
     "main": "debounce.js"
