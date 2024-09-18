@@ -1,6 +1,9 @@
 export default function proto(...methods){
 	let prototype = { extend: proto }
 
+	if(this)
+		Object.assign(prototype, Object.getPrototypeOf(this))
+
 	for(let method of methods){
 		if(typeof method === 'function'){
 			if(!method.name)
