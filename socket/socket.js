@@ -21,6 +21,7 @@ export default function ({ url, autoReconnect = true, autoRetryRequests = false,
 
 	function handleOpen(event){
 		connected = true
+		events.emit('open', event)
 		events.emit('connect', event)
 		pushRequests()
 	}
@@ -30,9 +31,8 @@ export default function ({ url, autoReconnect = true, autoRetryRequests = false,
 			setTimeout(connect, 1000)
 		}
 
-		if(!connected){
+		if(!connected)
 			return
-		}
 
 		if(autoRetryRequests){
 			for(let request of requestRegistry){
@@ -46,6 +46,7 @@ export default function ({ url, autoReconnect = true, autoRetryRequests = false,
 		}
 		
 		connected = false
+		events.emit('close', event)
 		events.emit('disconnect', event)
 	}
 
@@ -60,7 +61,7 @@ export default function ({ url, autoReconnect = true, autoRetryRequests = false,
 			return
 		}
 
-		let { event, ...payload } = JSON.parse(evt.data)
+		let payload = impl.mergeDecodeBuffers(JSON.parse(evt.data))
 
 		if(payload.id){
 			let handlerIndex = requestRegistry.findIndex(({id}) => id === payload.id)
@@ -68,15 +69,22 @@ export default function ({ url, autoReconnect = true, autoRetryRequests = false,
 			if(handlerIndex >= 0){
 				let request = requestRegistry[handlerIndex]
 
-				request.emit(event, payload)
+				if(request.eventKey)
+					request.emit(payload[request.eventKey], payload)
+				else
+					request.emit('message', payload)
 
-				let isResolved = typeof request.expectEvent === 'function'
-					? request.expectEvent({ event, ...payload })
-					: event === request.expectEvent
+				let isResolved = typeof request.resolveWhen === 'function'
+					? request.resolveWhen(payload)
+					: payload[request.eventKey] === request.resolveWhen
+
+				let isErrored = typeof request.rejectWhen === 'function'
+					? request.rejectWhen(payload)
+					: payload[request.eventKey] === request.rejectWhen
 
 				if(isResolved){
 					request.resolve(payload)
-				}else if(event === 'error'){
+				}else if(isErrored){
 					if(!request.events.error)
 						request.reject(payload)
 				}else{
@@ -85,15 +93,8 @@ export default function ({ url, autoReconnect = true, autoRetryRequests = false,
 
 				requestRegistry.splice(handlerIndex, 1)
 			}
-		}else if(requestRegistry.length > 0 && event === 'error'){
-			let lastRequest = requestRegistry.pop()
-
-			if(lastRequest.listeners.error)
-				lastRequest.emit(event, payload)
-			else
-				lastRequest.reject(payload)
 		}else{
-			events.emit(event, payload)
+			events.emit('message', payload)
 		}
 	}
 
@@ -116,63 +117,74 @@ export default function ({ url, autoReconnect = true, autoRetryRequests = false,
 
 	connect()
 
-	return Object.assign(
-		events,
-		{
-			status(){
-				return {
-					connected,
-					connectionError,
-					openRequests: requestRegistry.map(
-						request => ({
-							id: request.id,
-							sent: request.sent
-						})
-					)
-				}
-			},
-			request({ expectEvent, ...payload }){
-				let events = createEmitter()
-				let id = `r${++requestCounter}`
-				let request = {
-					payload: {
-						...payload,
-						id
-					},
-					...events,
-					expectEvent,
-					id
-				}
-
-				return Object.assign(
-					new Promise((resolve, reject) => {
-						Object.assign(request, {
-							resolve,
-							reject
-						})
-
-						requestRegistry.push(request)
-						pushRequests()
-					}),
-					request
+	return {
+		...events,
+		get connected(){
+			return connected
+		},
+		get connectionError(){
+			return connectionError
+		},
+		get requests(){
+			return requestRegistry
+				.filter(request => !!request.id)
+				.map(
+					request => ({
+						id: request.id,
+						sent: request.sent
+					})
 				)
-			},
-			send(payload){
-				requestRegistry.push({ payload })
-				pushRequests()
-			},
-			freeze(){
-				frozen = true
-			},
-			unfreeze(){
-				frozen = false
-
-				while(responseBacklog.length > 0){
-					handleMessage(responseBacklog.shift())
-				}
-
-				pushRequests()
+		},
+		request({ resolveWhen, rejectWhen, eventKey, ...payload }){
+			let events = createEmitter()
+			let id = `r${++requestCounter}`
+			let request = {
+				payload: {
+					...impl.stripEnodeBuffers(payload),
+					id
+				},
+				...events,
+				resolveWhen,
+				rejectWhen,
+				eventKey,
+				id
 			}
+
+			return Object.assign(
+				new Promise((resolve, reject) => {
+					Object.assign(request, {
+						resolve,
+						reject
+					})
+
+					requestRegistry.push(request)
+					pushRequests()
+				}),
+				request
+			)
+		},
+		send(payload){
+			requestRegistry.push({
+				payload: impl.stripEnodeBuffers(payload)
+			})
+			pushRequests()
+		},
+		freeze(){
+			frozen = true
+		},
+		unfreeze(){
+			frozen = false
+
+			while(responseBacklog.length > 0){
+				handleMessage(responseBacklog.shift())
+			}
+
+			pushRequests()
+		},
+		close(code, reason){
+			autoReconnect = false
+			autoRetryRequests = false
+			socket.close(code, reason)
 		}
-	)
+	}
 }

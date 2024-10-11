@@ -1,11 +1,11 @@
 {
     "name": "@mwni/socket",
     "type": "module",
-    "version": "1.3.0",
+    "version": "2.0.0",
     "main": "socket.node.js",
     "browser": "socket.browser.js",
     "dependencies": {
         "@mwni/events": "^3.0.0",
-        "ws": "^8.7.0"
+        "ws": "^8.18.0"
     }
 }
