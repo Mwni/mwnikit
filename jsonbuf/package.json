@@ -1,0 +1,7 @@
+{
+    "name": "@mwni/jsonbuf",
+    "type": "module",
+    "version": "1.0.0",
+    "main": "jsonbuf.node.js",
+    "browser": "jsonbuf.browser.js"
+}
