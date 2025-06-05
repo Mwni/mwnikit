@@ -1,5 +1,4 @@
-import fs from 'fs'
-import pu from 'path'
+import { join, dirname } from 'path'
 import { fork } from 'child_process'
 import { getCallerFile, getWorkerFile } from './utils.js'
 import { create as createProxy, derive as deriveProxy } from './proxy.js'
@@ -8,13 +7,13 @@ import { create as createProxy, derive as deriveProxy } from './proxy.js'
 export default async function(path, ...args){
 	let workerFile = getWorkerFile()
 	let callerFile = getCallerFile()
-	let callerDir = pu.dirname(callerFile)
+	let callerDir = dirname(callerFile)
 	let [file, func] = path.split(':')
 
 	if(!file)
 		file = callerFile
 	else
-		file = pu.join(callerDir, file)
+		file = join(callerDir, file)
 		
 		
 	let childProcess = fork(
@@ -51,15 +50,18 @@ export default async function(path, ...args){
 	})
 
 	try{
-		return new Promise((resolve, reject) => {
-			childProcess.on('message', message => {
-				if(message.type === 'return'){
-					resolve(deriveProxy({ proxy: message.value, process: childProcess }))
-				}else if(message.type === 'fatal'){
-					reject(message.error)
-				}
-			})
-		})
+		return Object.assign(
+			new Promise((resolve, reject) => {
+				childProcess.on('message', message => {
+					if(message.type === 'return'){
+						resolve(deriveProxy({ proxy: message.value, process: childProcess }))
+					}else if(message.type === 'fatal'){
+						reject(message.error)
+					}
+				})
+			}),
+			{ process: childProcess }
+		)
 	}catch(error){
 		throw error
 	}finally{
