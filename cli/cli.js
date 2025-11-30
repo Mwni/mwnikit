@@ -6,10 +6,11 @@ import * as toml from 'toml'
 
 
 export default async ({ origin, greeting, actions }) => {
+	const args = minimist(process.argv.slice(2))
+
+	log.config({ level: args.log || 'info' })
 	log.info(`*** ${greeting} ***`)
 	log.info(`working dir is ${path.resolve()}`)
-
-	const args = minimist(process.argv.slice(2))
 
 	if(!fs.existsSync('config.toml')){
 		if(fs.readdirSync('.').length === 0){
