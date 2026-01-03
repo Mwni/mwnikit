@@ -1,5 +1,8 @@
 export async function get({ url, query, headers }){
-	let queryString = new URLSearchParams(query).toString()
+	let sanitizedQuery = Object.fromEntries(
+		Object.entries(query ?? {}).filter(([, value]) => value !== undefined)
+	)
+	let queryString = new URLSearchParams(sanitizedQuery).toString()
 	let queryUrl = `${url}?${queryString}`
 	let res = await fetch(queryUrl, {
 		headers: {
