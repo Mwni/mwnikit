@@ -1,10 +1,10 @@
 {
 	"name": "@mwni/cli",
 	"type": "module",
-	"version": "1.0.1",
+	"version": "1.0.3",
 	"main": "cli.js",
 	"dependencies": {
-		"@mwni/log": "3.2.0",
+		"@mwni/log": "3.3.1",
 		"minimist": "1.2.8",
 		"toml": "3.0.0"
 	}

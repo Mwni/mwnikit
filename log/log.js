@@ -3,7 +3,13 @@ import { trace, diff, pin } from './trace.js'
 import { std } from './output.js'
 
 
-const defaultColor = 'yellow'
+const levelColors = {
+	D: 'gray',
+	I: 'cyan',
+	W: 'yellow',
+	E: 'pink'
+}
+
 const levelCascades = {
 	D: ['debug'],
 	I: ['debug', 'info'],
@@ -31,7 +37,7 @@ export function create(config = {}){
 
 	function write({ level, args, trace, root }){
 		let name = config.name
-		let color = config.color
+		let colors = config.colors || levelColors
 		let severity = config.level
 		
 		if(!root)
@@ -54,17 +60,14 @@ export function create(config = {}){
 			let { name: diffName } = diff(root, trace)
 
 			path.push(diffName)
-			
-			if(!color)
-				color = !entry || trace.file === entry?.file 
-					? 'yellow' 
-					: 'cyan'
 		}else{
 			path.push(trace.name)
 		}
 
 		output({
 			level,
+			color: colors[level],
+
 			name: path
 				.map(piece => piece.replaceAll('\\', '/'))
 				.join('/'),
@@ -73,10 +76,6 @@ export function create(config = {}){
 				.toISOString()
 				.slice(0,19)
 				.replace('T', ' '),
-
-			color: level === 'E'
-				? 'red'
-				: color || defaultColor,
 
 			contents: args.map(arg => {
 				if(typeof arg === 'number')
@@ -171,11 +170,11 @@ export function create(config = {}){
 	})
 
 	return logger = {
-		config({ name, color, level, root }){
+		config({ name, colors, level, root }){
 			entry = trace()
 			configure({ 
 				name,
-				color,
+				colors,
 				level,
 				root,
 				trace: entry
