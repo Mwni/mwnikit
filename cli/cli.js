@@ -5,7 +5,7 @@ import minimist from 'minimist'
 import * as toml from 'toml'
 
 
-export default async ({ origin, greeting, actions }) => {
+export default async ({ origin, greeting, alwaysCreateConfig, configTemplatePath = 'config.template.toml', actions }) => {
 	const args = minimist(process.argv.slice(2))
 
 	log.config({ level: args.log || 'info' })
@@ -13,9 +13,9 @@ export default async ({ origin, greeting, actions }) => {
 	log.info(`working dir is ${path.resolve()}`)
 
 	if(!fs.existsSync('config.toml')){
-		if(fs.readdirSync('.').length === 0){
+		if(fs.readdirSync('.').length === 0 || alwaysCreateConfig){
 			log.info(`creating default config.toml in working dir`)
-			fs.copyFileSync(path.join(origin.dirname, 'config.template.toml'), 'config.toml')
+			fs.copyFileSync(path.join(origin.dirname, configTemplatePath), 'config.toml')
 		}else{
 			log.error(`no config.toml in working dir`)
 			process.exit(1)
