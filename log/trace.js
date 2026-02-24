@@ -15,6 +15,7 @@ export function trace(){
 
 	let name = path.basename(file)
 		.replace(/\.js$/, '')
+		.replace(/\.ts$/, '')
 
 	return { 
 		dir: path.dirname(file),
