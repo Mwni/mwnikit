@@ -1,6 +1,7 @@
 {
     "name": "@mwni/events",
     "type": "module",
-    "version": "3.0.0",
-    "main": "index.js"
+    "version": "3.1.0",
+    "main": "index.js",
+    "types": "index.d.ts"
 }
