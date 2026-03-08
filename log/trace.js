@@ -36,6 +36,7 @@ export function diff(base, trace){
 
 	let name = relative
 		.replace(/\.js$/, '')
+		.replace(/\.ts$/, '')
 
 	return { name }
 }

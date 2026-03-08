@@ -69,6 +69,7 @@ export function create(config = {}){
 			color: colors[level],
 
 			name: path
+				.filter((piece, i) => piece !== '?' || i != path.length - 1)
 				.map(piece => piece.replaceAll('\\', '/'))
 				.join('/'),
 
