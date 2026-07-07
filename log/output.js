@@ -6,7 +6,7 @@ const colors = {
 	cyan: '36m',
 	magenta: '35m',
 	pink: '38;5;197m',
-	gray: '38;5;240m',
+	gray: '38;5;245m',
 }
 
 export function std({ level, date, name, color, contents }){
